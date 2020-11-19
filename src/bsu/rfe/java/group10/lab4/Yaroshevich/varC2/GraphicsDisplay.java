@@ -191,28 +191,50 @@ public class GraphicsDisplay extends JPanel {
         // Шаг 1 - Установить специальное перо для черчения контуров маркеров
         canvas.setStroke(markerStroke);
         // Выбрать черрный цвет для конктуров маркеров
-        canvas.setColor(Color.BLACK);
-        // Выбрать красный цвет для закрашивания маркеров внутри
-        // canvas.setPaint(Color.RED);
-        // Шаг 2 - Организовать цикл по всем точкам графика
+
         for (Double[] point:graphicsData){
             // Инцилизировать маркер как кривую
+            /* Специальное условие:
+            В записи целой части значения функции
+            в точке используются только чётные цифры (окрашу в СИНИЙ)
+             */
+            String y =  point[1].toString();
+            int i=0;
+            String number = "EVEN";
+            // Проверка "есть ли нечётные цифры в целой части?"
+            while(y.charAt(i)!='.'){
+                if((y.charAt(i)-'0')%2==0 || y.charAt(i)=='-'){
+                    i++;
+                }else{
+                    number="ODD";
+                    break;
+                }
+            }
+            switch (number) {
+                case "EVEN": {
+                    canvas.setColor(Color.BLUE);break;
+                }
+                case "ODD":{
+                    canvas.setColor(Color.BLACK);break;
+                }
+            }
             GeneralPath marker = new GeneralPath();
             // Центр - в точке (x,y)
-            Point2D.Double center = xyToPoint(point[0],point[1]);
-            marker.moveTo(center.getX()+2.75,center.getY()-5);
-            marker.lineTo(marker.getCurrentPoint().getX()-5.5,marker.getCurrentPoint().getY());
-            marker.moveTo(marker.getCurrentPoint().getX(),marker.getCurrentPoint().getY()+10);
-            marker.lineTo(marker.getCurrentPoint().getX()+5.5,marker.getCurrentPoint().getY());
-            marker.moveTo(center.getX(),marker.getCurrentPoint().getY());
-            marker.lineTo(marker.getCurrentPoint().getX(),marker.getCurrentPoint().getY()-10);
-            marker.moveTo(center.getX()-5,center.getY()+2.75);
-            marker.lineTo(marker.getCurrentPoint().getX(),marker.getCurrentPoint().getY()-5.5);
-            marker.moveTo(marker.getCurrentPoint().getX()+10,marker.getCurrentPoint().getY());
-            marker.lineTo(marker.getCurrentPoint().getX(),marker.getCurrentPoint().getY()+5.5);
-            marker.moveTo(marker.getCurrentPoint().getX(),center.getY());
-            marker.lineTo(marker.getCurrentPoint().getX()-10,marker.getCurrentPoint().getY());
+            Point2D.Double center = xyToPoint(point[0], point[1]);
+            marker.moveTo(center.getX() + 2.75, center.getY() - 5);
+            marker.lineTo(marker.getCurrentPoint().getX() - 5.5, marker.getCurrentPoint().getY());
+            marker.moveTo(marker.getCurrentPoint().getX(), marker.getCurrentPoint().getY() + 10);
+            marker.lineTo(marker.getCurrentPoint().getX() + 5.5, marker.getCurrentPoint().getY());
+            marker.moveTo(center.getX(), marker.getCurrentPoint().getY());
+            marker.lineTo(marker.getCurrentPoint().getX(), marker.getCurrentPoint().getY() - 10);
+            marker.moveTo(center.getX() - 5, center.getY() + 2.75);
+            marker.lineTo(marker.getCurrentPoint().getX(), marker.getCurrentPoint().getY() - 5.5);
+            marker.moveTo(marker.getCurrentPoint().getX() + 10, marker.getCurrentPoint().getY());
+            marker.lineTo(marker.getCurrentPoint().getX(), marker.getCurrentPoint().getY() + 5.5);
+            marker.moveTo(marker.getCurrentPoint().getX(), center.getY());
+            marker.lineTo(marker.getCurrentPoint().getX() - 10, marker.getCurrentPoint().getY());
             canvas.draw(marker);
+
 
         }
     }
