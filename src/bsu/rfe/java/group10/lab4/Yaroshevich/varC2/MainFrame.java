@@ -19,6 +19,7 @@ public class MainFrame extends JFrame {
     // Пункты меню
     private JCheckBoxMenuItem showAxisMenuItem;
     private JCheckBoxMenuItem showMarkerMenuItem;
+    private JCheckBoxMenuItem showCoordinateGridMenuItem;
 
     // Компонент-отображатель графика
     private GraphicsDisplay display = new GraphicsDisplay();
@@ -28,7 +29,7 @@ public class MainFrame extends JFrame {
 
     //Реализация конструктора окна MainFrame()
     public MainFrame(){
-        // Вызов конструктора предка Frame
+
         super("Построение графиков функций на основе подготовленных файлов");
         // Установка размеров окна
         setSize(WIDTH,HEIGHT);
@@ -46,6 +47,7 @@ public class MainFrame extends JFrame {
         // Добавить пункт "файл"
         JMenu fileMenu = new JMenu("Файл");
         menuBar.add(fileMenu);
+
         // Создать действие по открытию файла
         Action openGraphicsAction = new AbstractAction("Открыть файл") {
             @Override
@@ -60,9 +62,9 @@ public class MainFrame extends JFrame {
         };
         // Добавить соответсвубщий пункт меню
         fileMenu.add(openGraphicsAction);
-        // Создать пункт меню "График"
         JMenu graphicsMenu = new JMenu("График");
         menuBar.add(graphicsMenu);
+
         // Создать действие для реакции на активацию элемента
         // "Показывать оси координат"
         Action showAxisAction = new AbstractAction("Показывать оси координат") {
@@ -77,6 +79,7 @@ public class MainFrame extends JFrame {
         showAxisMenuItem = new JCheckBoxMenuItem(showAxisAction);
         graphicsMenu.add(showAxisMenuItem);
         showAxisMenuItem.setSelected(true);
+
         // Создать тоже самое для "Показывать маркеры точек"
         Action showMarkersAction = new AbstractAction("Показывать маркеры точек") {
             @Override
@@ -86,8 +89,19 @@ public class MainFrame extends JFrame {
         };
         showMarkerMenuItem = new JCheckBoxMenuItem(showMarkersAction);
         graphicsMenu.add(showMarkerMenuItem);
-        // Элемент по умолчанию выключен
         showMarkerMenuItem.setSelected(false);
+
+        // Создать действие для рекции на "Показывать координатную сетку"
+        Action showCoordinateGridAction = new AbstractAction("Показывать координатную сетку") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                display.setShowCoordinateGrid(showCoordinateGridMenuItem.isSelected());
+            }
+        };
+        showCoordinateGridMenuItem = new JCheckBoxMenuItem(showCoordinateGridAction);
+        graphicsMenu.add(showCoordinateGridMenuItem);
+        showCoordinateGridMenuItem.setEnabled(false);
+
         // Зарегистрировать обработчик событий, связаный с меню "График"
         graphicsMenu.addMenuListener(new GraphicsMenuListener());
         // Установить GraphicsDisplay в центр граничной компоновки
@@ -144,27 +158,6 @@ public class MainFrame extends JFrame {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     // Реализация класса GraphicsMenuListener являющийся внутреним
     // классом слушателем событий и реализует интерфейс MenuListener
     private class GraphicsMenuListener implements MenuListener{
@@ -175,6 +168,7 @@ public class MainFrame extends JFrame {
             // определяться загруженностью данных
             showAxisMenuItem.setEnabled(fileLoaded);
             showMarkerMenuItem.setEnabled(fileLoaded);
+            showCoordinateGridMenuItem.setEnabled(fileLoaded);
         }
 
         // Обработчик, вызываемый после того, как меню исчезло с экрана

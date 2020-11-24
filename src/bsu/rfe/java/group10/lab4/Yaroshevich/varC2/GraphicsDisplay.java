@@ -11,7 +11,8 @@ public class GraphicsDisplay extends JPanel {
 
     // Флаговые переменные, задающие правила отображения графика
     private boolean showAxis = true;
-    private boolean showMarkers = true;
+    private boolean showMarkers = false;
+    private boolean showCoordinateGrid = false;
 
     // Границы диапазона пространства, подлежащего отображения
     private double minX;
@@ -26,9 +27,14 @@ public class GraphicsDisplay extends JPanel {
     private BasicStroke graphicsStroke;
     private BasicStroke axisStroke;
     private BasicStroke markerStroke;
+    private BasicStroke coordinateGridStrokeAlongX;
+    private BasicStroke coordinateGridStrokeAlongY;
 
     // Шрифт отображения подписей к осям координат
     private  Font axisFont;
+    private Font gridFont;
+
+    private int numberOfDecimalPlaces=0;
 
     public GraphicsDisplay(){
         // Цвеет заднего фона отображения - белый
@@ -37,15 +43,18 @@ public class GraphicsDisplay extends JPanel {
         // Сконструировать необходимые объекты, используемые в рисовании
         // Перо для рисования графика
         graphicsStroke = new BasicStroke(2.0f, BasicStroke.CAP_BUTT,
-                BasicStroke.JOIN_ROUND,10.0f,new float[]{3,1,1,1,2,1,1,1,3},0.0f);
+                BasicStroke.JOIN_ROUND,10.0f,new float[]{3,1,1,1,2,1,1,1,3,1,},0.0f);
         // Перо для рисования осей координат
         axisStroke = new BasicStroke(1.0f,BasicStroke.CAP_BUTT,
                 BasicStroke.JOIN_MITER,10.0f,null,0.0f);
         // Перо для риссования контуров маркером
         markerStroke = new BasicStroke(1.0f,BasicStroke.CAP_BUTT,
                 BasicStroke.JOIN_MITER,10.0f,null,0.0f);
+
         // Шрифт для подписей координат
         axisFont = new Font("Serif",Font.BOLD,36);
+        gridFont = new Font("Serif",Font.BOLD,20);
+
     }
 
     // Метод вызываеться из обработчика элемента меню "Открыть файл с графиком"
@@ -67,7 +76,10 @@ public class GraphicsDisplay extends JPanel {
         this.showMarkers=showMarkers;
         repaint();
     }
-
+    public void setShowCoordinateGrid(boolean showCoordinateGrid){
+        this.showCoordinateGrid=showCoordinateGrid;
+        repaint();
+    }
     // Методы помощники для преобразования координат
     protected Point2D.Double xyToPoint(double x,double y){
         // Вычисляем смещения от самой левой точки (minX)
@@ -239,6 +251,122 @@ public class GraphicsDisplay extends JPanel {
         }
     }
 
+    // Реализация отображения сетки
+    public void paintCoordinateGrid(Graphics2D canvas){
+        // Определение цены деления по оси Y
+        double lengthY = maxY-minY;
+        final double divisionValueY=findDivisionValue(lengthY);
+        // Определение цены деления по оси X
+        double lengthX = maxX-minX;
+        final double divisionValueX=findDivisionValue(lengthX);
+        // Нахождение длины в пикселях для шаблона линии
+        double lengthLineAlongXInPixel=divisionValueX*scale;
+        double lengthLineAlongYInPixel=divisionValueY*scale;
+        // Нахождение цены одного деления линни в шаблоне в пикселях
+        float x1=(float)lengthLineAlongXInPixel/20;
+        float y1=(float)lengthLineAlongYInPixel/20;
+        // Задания линии исходя из наших параметров
+        coordinateGridStrokeAlongX = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND,10.0f,
+                new float[]{x1,x1,x1,x1,x1,x1,x1,x1,3*x1,x1,x1,x1,x1,x1,x1,x1,x1,x1},0.0f);
+        coordinateGridStrokeAlongY = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND,10.0f,
+                new float[]{y1,y1,y1,y1,y1,y1,y1,y1,3*y1,y1,y1,y1,y1,y1,y1,y1,y1,y1},0.0f);
+        // Установить особое начертания для линией вдольX
+        canvas.setColor(Color.GRAY);
+        canvas.setFont(gridFont);
+        // Создать объект контекста отображения текста - для получения
+        // характеристик устройства (экрана)
+        FontRenderContext context = canvas.getFontRenderContext();
+        // Нарисуем линии координатной сетки вдоль X
+        if(maxX>0 && minX<0&&maxY>0&&minY<0){
+            //Нарисуем координатные линии вдоль X
+            canvas.setStroke(coordinateGridStrokeAlongX);
+            Double currentCoordinateY = divisionValueY;
+            while(currentCoordinateY<maxY){
+                canvas.draw(new Line2D.Double(xyToPoint(0,currentCoordinateY),xyToPoint(minX,currentCoordinateY)));
+                canvas.draw(new Line2D.Double(xyToPoint(0,currentCoordinateY),xyToPoint(maxX,currentCoordinateY)));
+                Rectangle2D bounds = gridFont.getStringBounds(stringNumberWithoutTrash(currentCoordinateY),context);
+                Point2D.Double labelPos = xyToPoint(0,currentCoordinateY);
+                // Вывести надписи в точке с вычисленными координатами
+                canvas.drawString(stringNumberWithoutTrash(currentCoordinateY),(float)labelPos.getX()+10,
+                        (float)(labelPos.getY()-bounds.getY()));
+                currentCoordinateY+=divisionValueY;
+            }
+            currentCoordinateY = -divisionValueY;
+            while(currentCoordinateY>minY){
+                canvas.draw(new Line2D.Double(xyToPoint(0,currentCoordinateY),xyToPoint(minX,currentCoordinateY)));
+                canvas.draw(new Line2D.Double(xyToPoint(0,currentCoordinateY),xyToPoint(maxX,currentCoordinateY)));
+                Rectangle2D bounds = gridFont.getStringBounds(stringNumberWithoutTrash(currentCoordinateY),context);
+                Point2D.Double labelPos = xyToPoint(0,currentCoordinateY);
+                canvas.drawString(stringNumberWithoutTrash(currentCoordinateY),(float)labelPos.getX()+10,
+                        (float)(labelPos.getY()+bounds.getY()));
+                currentCoordinateY-=divisionValueY;
+            }
+            //Нарисуем координатнуые линни вдоль Y
+            canvas.setStroke(coordinateGridStrokeAlongY);
+            Double currentCoordinateX = divisionValueX;
+            while(currentCoordinateX<maxX){
+                canvas.draw(new Line2D.Double(xyToPoint(currentCoordinateX,0),xyToPoint(currentCoordinateX,maxY)));
+                canvas.draw(new Line2D.Double(xyToPoint(currentCoordinateX,0),xyToPoint(currentCoordinateX,minY)));
+                Rectangle2D bounds = gridFont.getStringBounds(stringNumberWithoutTrash(currentCoordinateX),context);
+                Point2D.Double labelPos = xyToPoint(currentCoordinateX,0);
+                canvas.drawString(stringNumberWithoutTrash(currentCoordinateX),
+                        (float)(labelPos.getX()-bounds.getX()-25),(float)labelPos.getY()-10);
+                currentCoordinateX+=divisionValueX;
+
+            }
+            currentCoordinateX = -divisionValueX;
+            while(currentCoordinateX>minX){
+                canvas.draw(new Line2D.Double(xyToPoint(currentCoordinateX,0),xyToPoint(currentCoordinateX,maxY)));
+                canvas.draw(new Line2D.Double(xyToPoint(currentCoordinateX,0),xyToPoint(currentCoordinateX,minY)));
+                Rectangle2D bounds = gridFont.getStringBounds(stringNumberWithoutTrash(currentCoordinateX),context);
+                Point2D.Double labelPos = xyToPoint(currentCoordinateX,0);
+                canvas.drawString(stringNumberWithoutTrash(currentCoordinateX),(float)(labelPos.getX()+bounds.getX()),
+                        (float)labelPos.getY()-10);
+                currentCoordinateX-=divisionValueX;
+            }
+        }
+
+    }
+
+    // Метод помощник для строкового представления числа без мусора
+    private String stringNumberWithoutTrash(Double number){
+
+        String num = number.toString();
+        if(num.length()>10) {
+            String returnNum = "";
+            int i = 0;
+            while (num.charAt(i) != '.') {
+                returnNum += num.charAt(i);
+                i++;
+            }
+            returnNum += num.charAt(i);
+            i++;
+            for (int k = i; k <= i + numberOfDecimalPlaces; k++) {
+                returnNum += num.charAt(k);
+            }
+            return returnNum;
+        }else return num;
+    }
+    // Метод-помощник для
+    private double findDivisionValue(double length){
+        Double del = length/14;
+        if(del>=1){
+            Integer delInt=del.intValue();
+            String delS=delInt.toString();
+            return (delS.charAt(0)-'0')*Math.pow(10,delS.length()-1);
+        }else{
+            String delS=del.toString();
+            int i=2;
+            while(delS.charAt(i)=='0'){
+                i++;
+            }
+            if(numberOfDecimalPlaces<i-1) {
+                numberOfDecimalPlaces = i - 1;
+            }
+            return (delS.charAt(i)-'0')*Math.pow(10,-(i-1));
+        }
+    }
+    // Метод-помощник для написания числа без мусора
     //Реализация метода перерисовки компонента paintComponent()
     public void paintComponent(Graphics g){
         /* Шаг 1 - Вызвать метод прдека для заливки области цветом заднего фона
@@ -306,11 +434,14 @@ public class GraphicsDisplay extends JPanel {
         paintGraphics(canvas);
         // Затем (если нужно) отображаються маркеры точек графика.
         if(showMarkers) paintMarkers(canvas);
+        if(showCoordinateGrid) paintCoordinateGrid(canvas);
         // Шаг 9 - Восстановить старые настройки холста
         canvas.setFont(oldFont);
         canvas.setPaint(oldPaint);
         canvas.setColor(oldColor);
         canvas.setStroke(oldStroke);
     }
+
+
 
 }
