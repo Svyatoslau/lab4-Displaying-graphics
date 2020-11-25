@@ -13,7 +13,7 @@ public class GraphicsDisplay extends JPanel {
     private boolean showAxis = true;
     private boolean showMarkers = false;
     private boolean showCoordinateGrid = false;
-
+    private boolean showLeft90DegreeRotation = false;
     // Границы диапазона пространства, подлежащего отображения
     private double minX;
     private double maxX;
@@ -59,6 +59,7 @@ public class GraphicsDisplay extends JPanel {
 
     // Метод вызываеться из обработчика элемента меню "Открыть файл с графиком"
     // главного окна приложения в случае успешной загрузки данных
+
     public void showGraphics(Double[][] graphicsData){
         // Сохранить массив точек во внутреннем поле класса
         this.graphicsData=graphicsData;
@@ -80,13 +81,18 @@ public class GraphicsDisplay extends JPanel {
         this.showCoordinateGrid=showCoordinateGrid;
         repaint();
     }
+    public void setShowLeft90DegreeRotation(boolean showLeft90DegreeRotation){
+        this.showLeft90DegreeRotation=showLeft90DegreeRotation;
+        repaint();
+    }
     // Методы помощники для преобразования координат
     protected Point2D.Double xyToPoint(double x,double y){
-        // Вычисляем смещения от самой левой точки (minX)
-        double deltaX = x-minX;
-        // Вычисляем смещение Y от самой верхней точки (msxY)
-        double deltaY = maxY-y;
-        return new Point2D.Double(deltaX*scale,deltaY*scale);
+
+            double deltaX = x - minX;
+            // Вычисляем смещение Y от самой верхней точки (msxY)
+            double deltaY = maxY - y;
+            return new Point2D.Double(deltaX * scale, deltaY * scale);
+
     }
     // Получения точек экрана
     protected Point2D.Double shiftPoint(Point2D.Double src,double deltaX,double deltaY){
@@ -250,6 +256,14 @@ public class GraphicsDisplay extends JPanel {
 
         }
     }
+    public void turnLeft90(Graphics2D canvas){
+        // матрица перехода плюс смещенные координатны начальной точки
+        double w=getWidth();
+        double h=getHeight();
+        AffineTransform at = new AffineTransform(0,-1*(h/w),1*(w/h),0,0,getHeight());
+        canvas.transform(at);
+
+    }
 
     // Реализация отображения сетки
     public void paintCoordinateGrid(Graphics2D canvas){
@@ -368,73 +382,64 @@ public class GraphicsDisplay extends JPanel {
     }
     // Метод-помощник для написания числа без мусора
     //Реализация метода перерисовки компонента paintComponent()
-    public void paintComponent(Graphics g){
+    public void paintComponent(Graphics g) {
         /* Шаг 1 - Вызвать метод прдека для заливки области цветом заднего фона
         Эта функциональность - единственное, что осталось в наследство от
         paintComponent класса JPanel
          */
         super.paintComponent(g);
+
         // Шаг 2 - Если данные графика не загруженны (при показе компонента
         // при запуске программы) - ничего не делать
-        if (graphicsData==null || graphicsData.length==0) return;
+        if (graphicsData == null || graphicsData.length == 0) return;
         // Шаг 3 - Определить начальные границы области отображения
         // Её верхнмй левый угол - (minX,maxY), правый нижний - (maxX,minY)
         minX = graphicsData[0][0];
-        maxX = graphicsData[graphicsData.length-1][0];
+        maxX = graphicsData[graphicsData.length - 1][0];
         minY = graphicsData[0][1];
         maxY = minY;
         // Найти минимальное и максимальное значение функции
-        for(int i = 1;i<graphicsData.length;i++){
-            if(graphicsData[i][1]<minY){
+        for (int i = 1; i < graphicsData.length; i++) {
+            if (graphicsData[i][1] < minY) {
                 minY = graphicsData[i][1];
             }
-            if(graphicsData[i][1]>maxY){
+            if (graphicsData[i][1] > maxY) {
                 maxY = graphicsData[i][1];
             }
         }
-        /* Шаг 4 - Определить (исходя из размеров окна) масштабы по осям X и Y -
-        сколько пикселов приходиться на единицу длины по X и по Y*/
-        double scaleX = getSize().getWidth()/(maxX-minX);
-        double scaleY = getSize().getHeight()/(maxY-minY);
+        double scaleX = getSize().getWidth() / (maxX - minX);
+        double scaleY = getSize().getHeight() / (maxY - minY);
         // Выбрать единый масштаб как минимальный из двух
-        scale = Math.min(scaleX,scaleY);
-        // Шаг 5 - корректировка границ области согласно выбранному масштабу
-        if(scale==scaleX){
-            /* Если за основу был взят масштаб по оси X, значит по оси Y
-            делений меньше, т.е. подлежащий отображению диапазон по Y будет меньше
-            высоты окна. Значит необходимо добавить делений, сделаем это так:
-            1) Вычислим, сколько делений влезет по Y при выбранном масштабе -
-                getSize().getHeight()/scale;
-            2) Вычтем из этого значения сколько делений требовалось изначально;
-            3) Набросим по половине недостающего расстояния на maxY и minY */
-            double yIncrement = (getSize().getHeight()/scale-(maxY-minY))/2;
-            maxY+=yIncrement;
-            minY-=yIncrement;
+        scale = Math.min(scaleX, scaleY);
+        if (scale == scaleX) {
+            double yIncrement = (getSize().getHeight() / scale - (maxY - minY)) / 2;
+            maxY += yIncrement;
+            minY -= yIncrement;
         }
-        if(scale==scaleY){
+        if (scale == scaleY) {
             // Если за основу был взят масштаб по оси Y
-            double xIncrement = (getSize().getWidth()/scale-(maxX-minX))/2;
-            maxX+=xIncrement;
-            minX-=xIncrement;
+            double xIncrement = (getSize().getWidth() / scale - (maxX - minX)) / 2;
+            maxX += xIncrement;
+            minX -= xIncrement;
         }
+
         // Шаг 6 - Преобразовать экземпляр Graphics к Graphics2D
-        Graphics2D canvas = (Graphics2D)g;
+        Graphics2D canvas = (Graphics2D) g;
         // Шаг 7 - Сохранить текущие настройки холста
         Stroke oldStroke = canvas.getStroke();
         Color oldColor = canvas.getColor();
         Paint oldPaint = canvas.getPaint();
         Font oldFont = canvas.getFont();
-        /* Шаг 8 - В нужном порядке вызвать методы отображения элементов графика
-        Порядок вызова методоав имеет значение, т.к. предыдущий рисунок будет
-        затираться последубщим
-        Первым (если нужно) отрисовываються оси координат.
-         */
-        if(showAxis) paintAxis(canvas);
+        // Если нужно перевернём графика с помощью отображения
+        if (showLeft90DegreeRotation) turnLeft90(canvas);
+
+        if (showAxis) paintAxis(canvas);
         // Затем отображаеться сам график
         paintGraphics(canvas);
         // Затем (если нужно) отображаються маркеры точек графика.
-        if(showMarkers) paintMarkers(canvas);
-        if(showCoordinateGrid) paintCoordinateGrid(canvas);
+        if (showMarkers) paintMarkers(canvas);
+        if (showCoordinateGrid) paintCoordinateGrid(canvas);
+
         // Шаг 9 - Восстановить старые настройки холста
         canvas.setFont(oldFont);
         canvas.setPaint(oldPaint);

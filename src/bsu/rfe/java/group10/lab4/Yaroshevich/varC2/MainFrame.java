@@ -20,6 +20,7 @@ public class MainFrame extends JFrame {
     private JCheckBoxMenuItem showAxisMenuItem;
     private JCheckBoxMenuItem showMarkerMenuItem;
     private JCheckBoxMenuItem showCoordinateGridMenuItem;
+    private JCheckBoxMenuItem showLeft90DegreeRotationMenuItem;
 
     // Компонент-отображатель графика
     private GraphicsDisplay display = new GraphicsDisplay();
@@ -102,6 +103,17 @@ public class MainFrame extends JFrame {
         graphicsMenu.add(showCoordinateGridMenuItem);
         showCoordinateGridMenuItem.setEnabled(false);
 
+        // Создать действие для "Повернуть график на 90 градусов налево"
+        Action showLeft90DegreeRotationAction = new AbstractAction("Повернуть график на 90 градусов налево") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                display.setShowLeft90DegreeRotation(showLeft90DegreeRotationMenuItem.isSelected());
+            }
+        };
+        showLeft90DegreeRotationMenuItem= new JCheckBoxMenuItem(showLeft90DegreeRotationAction);
+        graphicsMenu.add(showLeft90DegreeRotationMenuItem);
+        showCoordinateGridMenuItem.setEnabled(false);
+
         // Зарегистрировать обработчик событий, связаный с меню "График"
         graphicsMenu.addMenuListener(new GraphicsMenuListener());
         // Установить GraphicsDisplay в центр граничной компоновки
@@ -169,6 +181,7 @@ public class MainFrame extends JFrame {
             showAxisMenuItem.setEnabled(fileLoaded);
             showMarkerMenuItem.setEnabled(fileLoaded);
             showCoordinateGridMenuItem.setEnabled(fileLoaded);
+            showLeft90DegreeRotationMenuItem.setEnabled(fileLoaded);
         }
 
         // Обработчик, вызываемый после того, как меню исчезло с экрана
